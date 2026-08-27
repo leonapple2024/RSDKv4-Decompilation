@@ -17,12 +17,17 @@ jobs:
         run: |
           brew install cmake sdl2 libogg libvorbis
 
+      - name: Patch CMakeLists.txt for iOS
+        run: |
+          # Remove a linha que obriga incluir o arquivo de plataforma que não existe
+          sed -i '' '/include(platforms\//d' CMakeLists.txt
+          # Garante que o target RetroEngine seja criado no CMake independente do SO
+          sed -i '' 's/if (NOT APPLE)/if (TRUE)/g' CMakeLists.txt || true
+
       - name: Configure CMake
         run: |
           mkdir build_ios
           cd build_ios
-          # Usa a configuração do macOS/Darwin para criar o target RetroEngine,
-          # mas força o Clang a usar o SDK e arquitetura do iPhone
           cmake .. \
             -DCMAKE_SYSTEM_NAME=Darwin \
             -DCMAKE_OSX_SYSROOT=iphoneos \
