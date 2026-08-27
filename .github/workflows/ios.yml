@@ -21,18 +21,17 @@ jobs:
         run: |
           mkdir -p platforms
           cat << 'EOF' > platforms/iOS.cmake
-          # Coleta os arquivos de codigo do RSDKv4
           file(GLOB_RECURSE ENGINE_SOURCES "RSDKv4/*.cpp" "RSDKv4/*.c" "RSDKv4/*.m" "RSDKv4/*.mm")
           add_executable(RetroEngine ${ENGINE_SOURCES})
 
-          # Define OpenGL ES e instrui o pre-processador a usar headers mobiles
+          # Força o uso do OpenGL ES 2 e desativa explicitamente GLEW/OpenGL desktop
           target_compile_definitions(RetroEngine PRIVATE 
             RETRO_USING_GLES=1 
             RETRO_USING_GLES2=1
+            RETRO_USING_OPENGL=0
             __IPHONEOS__=1
           )
 
-          # Linka os Frameworks nativos do iOS (OpenGLES, Audio, etc)
           target_link_libraries(RetroEngine PRIVATE
             "-framework OpenGLES"
             "-framework QuartzCore"
@@ -51,7 +50,9 @@ jobs:
             -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_SYSROOT=iphoneos \
-            -DCMAKE_OSX_ARCHITECTURES=arm64
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DRETRO_USING_OPENGL=OFF \
+            -DRETRO_USING_GLES=ON
 
       - name: Build with Xcode
         run: |
