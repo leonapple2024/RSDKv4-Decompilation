@@ -21,9 +21,26 @@ jobs:
         run: |
           mkdir -p platforms
           cat << 'EOF' > platforms/iOS.cmake
-          # Filtra os fontes apenas para a pasta da engine RSDKv4 (ignora testes e exemplos das dependências)
+          # Coleta os arquivos de codigo do RSDKv4
           file(GLOB_RECURSE ENGINE_SOURCES "RSDKv4/*.cpp" "RSDKv4/*.c" "RSDKv4/*.m" "RSDKv4/*.mm")
           add_executable(RetroEngine ${ENGINE_SOURCES})
+
+          # Define OpenGL ES e instrui o pre-processador a usar headers mobiles
+          target_compile_definitions(RetroEngine PRIVATE 
+            RETRO_USING_GLES=1 
+            RETRO_USING_GLES2=1
+            __IPHONEOS__=1
+          )
+
+          # Linka os Frameworks nativos do iOS (OpenGLES, Audio, etc)
+          target_link_libraries(RetroEngine PRIVATE
+            "-framework OpenGLES"
+            "-framework QuartzCore"
+            "-framework UIKit"
+            "-framework AudioToolbox"
+            "-framework AVFoundation"
+            "-framework CoreAudio"
+          )
           EOF
 
       - name: Configure CMake for iOS
