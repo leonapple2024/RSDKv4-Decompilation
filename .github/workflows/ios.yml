@@ -19,10 +19,18 @@ jobs:
 
       - name: Patch CMakeLists.txt for iOS
         run: |
-          # Remove a linha que obriga incluir o arquivo de plataforma que não existe
+          # Remove o include de platforms/ que não existe
           sed -i '' '/include(platforms\//d' CMakeLists.txt
-          # Garante que o target RetroEngine seja criado no CMake independente do SO
-          sed -i '' 's/if (NOT APPLE)/if (TRUE)/g' CMakeLists.txt || true
+
+          # Garante que as dependências da SDL2 sejam encontradas no Mac
+          python3 -c '
+          with open("CMakeLists.txt", "r") as f:
+              content = f.read()
+          # Força a criação do executável RetroEngine desativando checagens restritivas de OS
+          content = content.replace("if (NOT RETRO_BUILD_HEADLESS)", "if (TRUE)")
+          with open("CMakeLists.txt", "w") as f:
+              f.write(content)
+          '
 
       - name: Configure CMake
         run: |
@@ -46,7 +54,7 @@ jobs:
           cd build_ios
           mkdir -p Payload/RSDKv4.app
           
-          # Copia o binário gerado para a estrutura do iOS
+          # Copia o executável gerado para a pasta Payload
           find . -maxdepth 2 -type f \( -name "RSDKv4" -o -name "RetroEngine" \) -exec cp {} Payload/RSDKv4.app/ \;
           
           if [ -f "../iOS/Info.plist" ]; then
