@@ -17,28 +17,36 @@ jobs:
         run: |
           brew install cmake sdl2 libogg libvorbis
 
-      - name: Configure CMake for iOS
+      - name: Configure CMake
         run: |
           mkdir build_ios
           cd build_ios
           cmake .. \
-            -G Xcode \
-            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_SYSTEM_NAME=Darwin \
             -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_C_FLAGS="-target arm64-apple-ios14.0 -miphoneos-version-min=14.0" \
+            -DCMAKE_CXX_FLAGS="-target arm64-apple-ios14.0 -miphoneos-version-min=14.0" \
             -DRETRO_BUILD_HEADLESS=OFF
 
-      - name: Build with Xcode
+      - name: Build Project
         run: |
           cd build_ios
-          xcodebuild -configuration Release -sdk iphoneos -arch arm64 CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+          make -j$(sysctl -n hw.ncpu)
 
       - name: Package IPA
         run: |
           cd build_ios
           mkdir -p Payload/RSDKv4.app
-          find build -name "RSDKv4" -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || find build -name "RetroEngine" -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || true
-          if [ -f "../iOS/Info.plist" ]; then cp ../iOS/Info.plist Payload/RSDKv4.app/; fi
+          
+          # Copia o executável compilado
+          find . -maxdepth 2 -type f \( -name "RSDKv4" -o -name "RetroEngine" \) -exec cp {} Payload/RSDKv4.app/ \;
+          
+          # Copia o Info.plist caso exista
+          if [ -f "../iOS/Info.plist" ]; then
+            cp ../iOS/Info.plist Payload/RSDKv4.app/
+          fi
+          
           zip -r RSDKv4.ipa Payload
 
       - name: Upload IPA Artifact
