@@ -21,7 +21,8 @@ jobs:
         run: |
           mkdir -p platforms
           cat << 'EOF' > platforms/iOS.cmake
-          add_executable(RetroEngine main.cpp)
+          file(GLOB_RECURSE ENGINE_SOURCES "RSDKv4/*.cpp" "*.cpp" "RSDKv4/*.c" "*.c")
+          add_executable(RetroEngine ${ENGINE_SOURCES})
           EOF
 
       - name: Configure CMake for iOS
@@ -44,7 +45,7 @@ jobs:
           cd build_ios
           mkdir -p Payload/RSDKv4.app
           
-          # Copia os arquivos binários para o pacote .app
+          # Copia os arquivos binários gerados para a estrutura .app
           find . -name "RSDKv4*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || true
           find . -name "RetroEngine*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || true
           
