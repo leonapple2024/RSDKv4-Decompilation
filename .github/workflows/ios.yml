@@ -17,22 +17,26 @@ jobs:
         run: |
           brew install cmake sdl2 libogg libvorbis
 
-      - name: Configure CMake (Xcode Project)
+      - name: Create Missing Platform File
+        run: |
+          mkdir -p platforms
+          cat << 'EOF' > platforms/iOS.cmake
+          add_executable(RetroEngine main.cpp)
+          EOF
+
+      - name: Configure CMake for iOS
         run: |
           mkdir build_ios
           cd build_ios
-          # Força a geração do projeto .xcodeproj do Xcode configurado para iOS
           cmake .. \
             -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_SYSROOT=iphoneos \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DRETRO_GAME_SUBSYSTEM=ON
+            -DCMAKE_OSX_ARCHITECTURES=arm64
 
       - name: Build with Xcode
         run: |
           cd build_ios
-          # Compila o projeto nativamente no Mac utilizando o xcodebuild
           xcodebuild -configuration Release -sdk iphoneos -arch arm64 CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
 
       - name: Package IPA
@@ -40,8 +44,9 @@ jobs:
           cd build_ios
           mkdir -p Payload/RSDKv4.app
           
-          # Busca o executável gerado pelo Xcode na pasta Release-iphoneos
-          find . -name "RSDKv4*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || find . -name "RetroEngine*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || true
+          # Copia os arquivos binários para o pacote .app
+          find . -name "RSDKv4*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || true
+          find . -name "RetroEngine*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || true
           
           if [ -f "../iOS/Info.plist" ]; then
             cp ../iOS/Info.plist Payload/RSDKv4.app/
