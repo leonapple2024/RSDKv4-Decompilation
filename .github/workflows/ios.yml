@@ -17,32 +17,11 @@ jobs:
         run: |
           brew install cmake sdl2 libogg libvorbis
 
-      - name: Create Missing Platform File
+      - name: Patch CMake for iOS (Disable Desktop OpenGL)
         run: |
-          mkdir -p platforms
-          cat << 'EOF' > platforms/iOS.cmake
-          file(GLOB_RECURSE ENGINE_SOURCES "RSDKv4/*.cpp" "RSDKv4/*.c" "RSDKv4/*.m" "RSDKv4/*.mm")
-          add_executable(RetroEngine ${ENGINE_SOURCES})
-
-          # Remove a definição de OpenGL de Desktop que o CMake principal injeta
-          remove_definitions(-DRETRO_USING_OPENGL=1)
-          
-          target_compile_definitions(RetroEngine PRIVATE 
-            RETRO_USING_GLES=1 
-            RETRO_USING_GLES2=1
-            RETRO_USING_OPENGL=0
-            __IPHONEOS__=1
-          )
-
-          target_link_libraries(RetroEngine PRIVATE
-            "-framework OpenGLES"
-            "-framework QuartzCore"
-            "-framework UIKit"
-            "-framework AudioToolbox"
-            "-framework AVFoundation"
-            "-framework CoreAudio"
-          )
-          EOF
+          # Patch direto no CMakeLists.txt raiz para impedir que ele force OpenGL de Desktop no iOS
+          sed -i '' 's/set(RETRO_USING_OPENGL ON)/set(RETRO_USING_OPENGL OFF)/g' CMakeLists.txt || true
+          sed -i '' 's/add_definitions(-DRETRO_USING_OPENGL=1)/add_definitions(-DRETRO_USING_OPENGL=0)/g' CMakeLists.txt || true
 
       - name: Configure CMake for iOS
         run: |
@@ -55,7 +34,8 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DRETRO_USING_OPENGL=OFF \
             -DRETRO_USING_GLES=ON \
-            -DRETRO_USING_GLES2=ON
+            -DRETRO_USING_GLES2=ON \
+            -DRETRO_USING_SDL2=ON
 
       - name: Build with Xcode
         run: |
@@ -67,8 +47,9 @@ jobs:
           cd build_ios
           mkdir -p Payload/RSDKv4.app
           
-          find . -name "RSDKv4*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || true
-          find . -name "RetroEngine*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || true
+          # Copia os executáveis gerados
+          find build/Release-iphoneos/ -name "RSDKv4*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || true
+          find build/Release-iphoneos/ -name "RetroEngine*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || true
           
           if [ -f "../iOS/Info.plist" ]; then
             cp ../iOS/Info.plist Payload/RSDKv4.app/
