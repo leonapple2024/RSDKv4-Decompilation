@@ -17,45 +17,31 @@ jobs:
         run: |
           brew install cmake sdl2 libogg libvorbis
 
-      - name: Patch CMakeLists.txt for iOS
-        run: |
-          # Remove o include de platforms/ que não existe
-          sed -i '' '/include(platforms\//d' CMakeLists.txt
-
-          # Garante que as dependências da SDL2 sejam encontradas no Mac
-          python3 -c '
-          with open("CMakeLists.txt", "r") as f:
-              content = f.read()
-          # Força a criação do executável RetroEngine desativando checagens restritivas de OS
-          content = content.replace("if (NOT RETRO_BUILD_HEADLESS)", "if (TRUE)")
-          with open("CMakeLists.txt", "w") as f:
-              f.write(content)
-          '
-
-      - name: Configure CMake
+      - name: Configure CMake (Xcode Project)
         run: |
           mkdir build_ios
           cd build_ios
+          # Força a geração do projeto .xcodeproj do Xcode configurado para iOS
           cmake .. \
-            -DCMAKE_SYSTEM_NAME=Darwin \
+            -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_C_FLAGS="-target arm64-apple-ios14.0 -miphoneos-version-min=14.0" \
-            -DCMAKE_CXX_FLAGS="-target arm64-apple-ios14.0 -miphoneos-version-min=14.0" \
-            -DRETRO_BUILD_HEADLESS=OFF
+            -DRETRO_GAME_SUBSYSTEM=ON
 
-      - name: Build Project
+      - name: Build with Xcode
         run: |
           cd build_ios
-          make -j$(sysctl -n hw.ncpu)
+          # Compila o projeto nativamente no Mac utilizando o xcodebuild
+          xcodebuild -configuration Release -sdk iphoneos -arch arm64 CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
 
       - name: Package IPA
         run: |
           cd build_ios
           mkdir -p Payload/RSDKv4.app
           
-          # Copia o executável gerado para a pasta Payload
-          find . -maxdepth 2 -type f \( -name "RSDKv4" -o -name "RetroEngine" \) -exec cp {} Payload/RSDKv4.app/ \;
+          # Busca o executável gerado pelo Xcode na pasta Release-iphoneos
+          find . -name "RSDKv4*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || find . -name "RetroEngine*" -type f -exec cp {} Payload/RSDKv4.app/ \; 2>/dev/null || true
           
           if [ -f "../iOS/Info.plist" ]; then
             cp ../iOS/Info.plist Payload/RSDKv4.app/
