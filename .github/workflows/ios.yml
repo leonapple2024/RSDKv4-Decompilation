@@ -24,12 +24,13 @@ jobs:
           file(GLOB_RECURSE ENGINE_SOURCES "RSDKv4/*.cpp" "RSDKv4/*.c" "RSDKv4/*.m" "RSDKv4/*.mm")
           add_executable(RetroEngine ${ENGINE_SOURCES})
 
-          # Remove qualquer definição antiga de OPENGL que o CMake pai possa ter injetado
-          get_target_property(CURRENT_DEFS RetroEngine COMPILE_DEFINITIONS)
+          # Remove a definição de OpenGL de Desktop que o CMake principal injeta
+          remove_definitions(-DRETRO_USING_OPENGL=1)
           
           target_compile_definitions(RetroEngine PRIVATE 
             RETRO_USING_GLES=1 
             RETRO_USING_GLES2=1
+            RETRO_USING_OPENGL=0
             __IPHONEOS__=1
           )
 
