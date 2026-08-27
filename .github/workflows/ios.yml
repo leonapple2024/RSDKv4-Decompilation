@@ -22,12 +22,11 @@ jobs:
           mkdir build_ios
           cd build_ios
           cmake .. \
-            -DCMAKE_SYSTEM_NAME=Generic \
-            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
-            -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++ \
-            -DCMAKE_C_FLAGS="-target arm64-apple-ios14.0 -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -miphoneos-version-min=14.0" \
-            -DCMAKE_CXX_FLAGS="-target arm64-apple-ios14.0 -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -miphoneos-version-min=14.0" \
+            -DCMAKE_SYSTEM_NAME=Mac \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_C_FLAGS="-target arm64-apple-ios14.0 -miphoneos-version-min=14.0" \
+            -DCMAKE_CXX_FLAGS="-target arm64-apple-ios14.0 -miphoneos-version-min=14.0" \
             -DRETRO_BUILD_HEADLESS=OFF
 
       - name: Build Project
@@ -40,7 +39,7 @@ jobs:
           cd build_ios
           mkdir -p Payload/RSDKv4.app
           
-          # Procura o executável gerado
+          # Copia o executável gerado
           find . -maxdepth 2 -type f \( -name "RSDKv4" -o -name "RetroEngine" \) -exec cp {} Payload/RSDKv4.app/ \;
           
           # Copia o Info.plist caso exista
