@@ -24,11 +24,12 @@ jobs:
           file(GLOB_RECURSE ENGINE_SOURCES "RSDKv4/*.cpp" "RSDKv4/*.c" "RSDKv4/*.m" "RSDKv4/*.mm")
           add_executable(RetroEngine ${ENGINE_SOURCES})
 
-          # Força o uso do OpenGL ES 2 e desativa explicitamente GLEW/OpenGL desktop
+          # Remove qualquer definição antiga de OPENGL que o CMake pai possa ter injetado
+          get_target_property(CURRENT_DEFS RetroEngine COMPILE_DEFINITIONS)
+          
           target_compile_definitions(RetroEngine PRIVATE 
             RETRO_USING_GLES=1 
             RETRO_USING_GLES2=1
-            RETRO_USING_OPENGL=0
             __IPHONEOS__=1
           )
 
@@ -52,7 +53,8 @@ jobs:
             -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DRETRO_USING_OPENGL=OFF \
-            -DRETRO_USING_GLES=ON
+            -DRETRO_USING_GLES=ON \
+            -DRETRO_USING_GLES2=ON
 
       - name: Build with Xcode
         run: |
